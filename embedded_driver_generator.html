@@ -1,0 +1,495 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EmbedGen - Driver Code Generator</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@300;400;500;600&display=swap');
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #0a0e1a;
+    color: #e2e8f0;
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+  }
+
+  header {
+    padding: 24px 32px;
+    border-bottom: 1px solid #1e2d4a;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .logo {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 22px;
+    font-weight: 700;
+    color: #38bdf8;
+  }
+
+  .logo span { color: #f59e0b; }
+
+  .tagline {
+    font-size: 13px;
+    color: #64748b;
+    margin-left: auto;
+  }
+
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 40px 32px;
+  }
+
+  .hero {
+    text-align: center;
+    margin-bottom: 48px;
+  }
+
+  .hero h1 {
+    font-size: 36px;
+    font-weight: 600;
+    line-height: 1.2;
+    margin-bottom: 12px;
+    background: linear-gradient(135deg, #38bdf8, #818cf8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .hero p {
+    color: #94a3b8;
+    font-size: 15px;
+  }
+
+  .generator {
+    display: grid;
+    grid-template-columns: 360px 1fr;
+    gap: 24px;
+  }
+
+  .panel {
+    background: #0f172a;
+    border: 1px solid #1e2d4a;
+    border-radius: 12px;
+    padding: 24px;
+  }
+
+  .panel h2 {
+    font-size: 14px;
+    font-weight: 600;
+    color: #38bdf8;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 20px;
+  }
+
+  .form-group {
+    margin-bottom: 18px;
+  }
+
+  label {
+    display: block;
+    font-size: 12px;
+    color: #94a3b8;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  select, input, textarea {
+    width: 100%;
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    color: #e2e8f0;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    padding: 10px 12px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  select:focus, input:focus, textarea:focus {
+    border-color: #38bdf8;
+  }
+
+  textarea {
+    resize: vertical;
+    min-height: 80px;
+    font-size: 13px;
+  }
+
+  .checkbox-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .chip {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    user-select: none;
+  }
+
+  .chip.active {
+    background: #0c4a6e;
+    border-color: #38bdf8;
+    color: #38bdf8;
+  }
+
+  .generate-btn {
+    width: 100%;
+    background: linear-gradient(135deg, #0369a1, #4f46e5);
+    border: none;
+    border-radius: 8px;
+    color: white;
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    padding: 14px;
+    cursor: pointer;
+    transition: opacity 0.2s;
+    margin-top: 8px;
+  }
+
+  .generate-btn:hover { opacity: 0.9; }
+  .generate-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .output-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .tabs {
+    display: flex;
+    gap: 8px;
+    border-bottom: 1px solid #1e2d4a;
+    padding-bottom: 12px;
+  }
+
+  .tab {
+    background: none;
+    border: none;
+    color: #64748b;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    padding: 6px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .tab.active {
+    background: #1e293b;
+    color: #38bdf8;
+  }
+
+  .code-box {
+    background: #020817;
+    border: 1px solid #1e2d4a;
+    border-radius: 8px;
+    padding: 20px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    line-height: 1.7;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    min-height: 400px;
+    color: #94a3b8;
+    flex: 1;
+  }
+
+  .code-box.has-content { color: #e2e8f0; }
+
+  .placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    gap: 12px;
+    color: #334155;
+  }
+
+  .placeholder-icon { font-size: 48px; }
+
+  .copy-btn {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    color: #94a3b8;
+    font-size: 12px;
+    padding: 6px 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+    align-self: flex-end;
+  }
+
+  .copy-btn:hover { border-color: #38bdf8; color: #38bdf8; }
+
+  .loading {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #38bdf8;
+    font-size: 13px;
+  }
+
+  .dot {
+    width: 6px;
+    height: 6px;
+    background: #38bdf8;
+    border-radius: 50%;
+    animation: bounce 1.2s infinite;
+  }
+
+  .dot:nth-child(2) { animation-delay: 0.2s; }
+  .dot:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes bounce {
+    0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+    40% { transform: scale(1); opacity: 1; }
+  }
+
+  .badge {
+    display: inline-block;
+    background: #0c4a6e;
+    color: #38bdf8;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    margin-left: 8px;
+    vertical-align: middle;
+  }
+
+  .error { color: #f87171; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Embed<span>Gen</span></div>
+  <div class="tagline">AI-powered Linux driver generator for embedded engineers</div>
+</header>
+
+<div class="container">
+  <div class="hero">
+    <h1>Generate Linux Driver Code Instantly</h1>
+    <p>Select your controller, peripheral, and options — get production-ready Linux kernel driver code</p>
+  </div>
+
+  <div class="generator">
+    <!-- Left Panel: Controls -->
+    <div class="panel">
+      <h2>Configuration</h2>
+
+      <div class="form-group">
+        <label>Controller / SoC</label>
+        <select id="controller">
+          <option value="">Select controller...</option>
+          <option value="Qualcomm Snapdragon (ARM64)">Qualcomm Snapdragon (ARM64)</option>
+          <option value="TI AM335x (ARM Cortex-A8)">TI AM335x (ARM Cortex-A8)</option>
+          <option value="TI TMS570 (ARM Cortex-R4)">TI TMS570 (ARM Cortex-R4)</option>
+          <option value="Renesas RH850">Renesas RH850</option>
+          <option value="Renesas R-Car (ARM64)">Renesas R-Car (ARM64)</option>
+          <option value="STM32 (ARM Cortex-M)">STM32 (ARM Cortex-M)</option>
+          <option value="NXP i.MX8 (ARM64)">NXP i.MX8 (ARM64)</option>
+          <option value="Generic ARM64 (QEMU virt)">Generic ARM64 (QEMU virt)</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Driver Type</label>
+        <select id="driverType">
+          <option value="">Select driver type...</option>
+          <option value="I2C Device Driver">I2C Device Driver</option>
+          <option value="SPI Device Driver">SPI Device Driver</option>
+          <option value="UART/Serial Driver">UART/Serial Driver</option>
+          <option value="GPIO Driver">GPIO Driver</option>
+          <option value="CAN Bus Driver">CAN Bus Driver</option>
+          <option value="Platform Driver">Platform Driver</option>
+          <option value="Character Device Driver">Character Device Driver</option>
+          <option value="Interrupt Handler">Interrupt Handler</option>
+          <option value="DMA Driver">DMA Driver</option>
+          <option value="Watchdog Driver">Watchdog Driver</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Peripheral / Device</label>
+        <input type="text" id="peripheral" placeholder="e.g. MPU6050 IMU sensor, 24C256 EEPROM..."/>
+      </div>
+
+      <div class="form-group">
+        <label>Features to include</label>
+        <div class="checkbox-group" id="features">
+          <div class="chip active" data-val="Device Tree binding">Device Tree</div>
+          <div class="chip active" data-val="probe and remove callbacks">Probe/Remove</div>
+          <div class="chip" data-val="interrupt handling">Interrupts</div>
+          <div class="chip" data-val="DMA support">DMA</div>
+          <div class="chip" data-val="power management (suspend/resume)">Power Mgmt</div>
+          <div class="chip" data-val="sysfs interface">Sysfs</div>
+          <div class="chip" data-val="debugfs interface">Debugfs</div>
+          <div class="chip" data-val="error handling">Error Handling</div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Additional requirements</label>
+        <textarea id="extra" placeholder="e.g. Read temperature every 100ms, support multiple devices on same bus, add ioctl for configuration..."></textarea>
+      </div>
+
+      <button class="generate-btn" id="generateBtn" onclick="generateDriver()">
+        ⚡ Generate Driver Code
+      </button>
+    </div>
+
+    <!-- Right Panel: Output -->
+    <div class="panel output-panel">
+      <div style="display:flex; align-items:center; justify-content:space-between;">
+        <h2>Generated Code <span class="badge" id="langBadge">Linux Kernel C</span></h2>
+        <button class="copy-btn" onclick="copyCode()">Copy Code</button>
+      </div>
+
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab('driver')">driver.c</button>
+        <button class="tab" onclick="switchTab('dts')">device-tree.dts</button>
+        <button class="tab" onclick="switchTab('makefile')">Makefile</button>
+      </div>
+
+      <div class="code-box" id="codeOutput">
+        <div class="placeholder">
+          <div class="placeholder-icon">⚙️</div>
+          <div>Select controller and driver type</div>
+          <div style="font-size:11px">then click Generate Driver Code</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  let generatedCode = { driver: '', dts: '', makefile: '' };
+  let activeTab = 'driver';
+
+  // Chip toggle
+  document.querySelectorAll('.chip').forEach(chip => {
+    chip.addEventListener('click', () => chip.classList.toggle('active'));
+  });
+
+  function getSelectedFeatures() {
+    return [...document.querySelectorAll('.chip.active')]
+      .map(c => c.dataset.val).join(', ');
+  }
+
+  function switchTab(tab) {
+    activeTab = tab;
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    event.target.classList.add('active');
+    const out = document.getElementById('codeOutput');
+    if (generatedCode[tab]) {
+      out.textContent = generatedCode[tab];
+      out.classList.add('has-content');
+    } else {
+      out.innerHTML = '<div class="placeholder"><div class="placeholder-icon">⚙️</div><div>Generate code first</div></div>';
+      out.classList.remove('has-content');
+    }
+  }
+
+  function copyCode() {
+    const text = document.getElementById('codeOutput').textContent;
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = document.querySelector('.copy-btn');
+      btn.textContent = 'Copied!';
+      setTimeout(() => btn.textContent = 'Copy Code', 2000);
+    });
+  }
+
+  async function generateDriver() {
+    const controller = document.getElementById('controller').value;
+    const driverType = document.getElementById('driverType').value;
+    const peripheral = document.getElementById('peripheral').value;
+    const extra = document.getElementById('extra').value;
+    const features = getSelectedFeatures();
+
+    if (!controller || !driverType) {
+      alert('Please select controller and driver type!');
+      return;
+    }
+
+    const btn = document.getElementById('generateBtn');
+    const out = document.getElementById('codeOutput');
+
+    btn.disabled = true;
+    btn.textContent = 'Generating...';
+    out.innerHTML = '<div class="loading"><div class="dot"></div><div class="dot"></div><div class="dot"></div><span>Generating your driver code...</span></div>';
+    out.classList.remove('has-content');
+
+    const prompt = `You are an expert Linux kernel driver developer. Generate complete, production-ready Linux kernel driver code for the following specification:
+
+Controller/SoC: ${controller}
+Driver Type: ${driverType}
+Peripheral/Device: ${peripheral || 'Generic device'}
+Features required: ${features}
+Additional requirements: ${extra || 'None'}
+
+Generate THREE separate outputs clearly marked:
+
+=== DRIVER_C ===
+(Complete Linux kernel driver .c file with all includes, structures, functions, module_init, module_exit, MODULE_LICENSE)
+
+=== DEVICE_TREE_DTS ===
+(Complete Device Tree node/overlay for this driver with compatible string, reg, interrupts if needed)
+
+=== MAKEFILE ===
+(Complete Makefile for cross-compiling this driver for ARM64 using buildroot toolchain)
+
+Make the code complete, well-commented, and ready to compile. Use proper Linux kernel APIs. Include error handling.`;
+
+    try {
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 1000,
+          messages: [{ role: 'user', content: prompt }]
+        })
+      });
+
+      const data = await response.json();
+      const text = data.content.map(i => i.text || '').join('');
+
+      // Parse three sections
+      const driverMatch = text.match(/=== DRIVER_C ===([\s\S]*?)(?==== DEVICE_TREE_DTS ===|$)/);
+      const dtsMatch = text.match(/=== DEVICE_TREE_DTS ===([\s\S]*?)(?==== MAKEFILE ===|$)/);
+      const makeMatch = text.match(/=== MAKEFILE ===([\s\S]*?)$/);
+
+      generatedCode.driver = driverMatch ? driverMatch[1].trim() : text;
+      generatedCode.dts = dtsMatch ? dtsMatch[1].trim() : '// Device Tree node not generated';
+      generatedCode.makefile = makeMatch ? makeMatch[1].trim() : '// Makefile not generated';
+
+      out.textContent = generatedCode[activeTab];
+      out.classList.add('has-content');
+
+    } catch (err) {
+      out.innerHTML = `<span class="error">Error generating code: ${err.message}\n\nMake sure you have API access enabled.</span>`;
+    }
+
+    btn.disabled = false;
+    btn.textContent = '⚡ Generate Driver Code';
+  }
+</script>
+</body>
+</html>
